@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: monthly-historical-archive
+  cancel-in-progress: false
+
 jobs:
   sync-archive:
     runs-on: ubuntu-latest
@@ -23,6 +27,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Run archive validation unit tests
+        run: python -m unittest discover -s tests -v
 
       # 第一步：准备月份参数（默认上个月）
       - name: Prepare month parameters
@@ -149,8 +156,8 @@ jobs:
           local_count=$(find "Archive/PVPower/${sync_month}" -maxdepth 1 -type f -name "HZ_${sync_month}-*.csv" | wc -l)
           echo "Finished PVPower sync for $sync_month, local file count: $local_count"
           
-      # 第三步：（4）同步 envdata-sat 的 Himawari 日 CSV
-      - name: Sync Himawari daily CSVs from envdata-sat
+      # 第三步：（4）校验并归档 envdata-sat 的 Himawari 日 CSV
+      - name: Validate and archive Himawari monthly CSVs
         run: |
           set -euo pipefail
 
@@ -164,7 +171,7 @@ jobs:
           git clone --depth=1 --filter=blob:none --no-checkout https://github.com/StorywithLove/envdata-sat.git "$tmp_dir"
           cd "$tmp_dir"
           git sparse-checkout init --no-cone
-          git sparse-checkout set "$source_dir"
+          git sparse-checkout set "$source_dir" "config/cities.json"
           git checkout --progress
           cd -
 
@@ -173,63 +180,11 @@ jobs:
             exit 1
           fi
 
-          shopt -s nullglob
-          csv_files=("$tmp_dir/$source_dir"/radiation_*.csv)
-          if [ ${#csv_files[@]} -eq 0 ]; then
-            echo "No Himawari daily CSV files found for $sync_month."
-            exit 1
-          fi
-
-          expected_days=$(date -u -d "${sync_month}-01 +1 month -1 day" +%d)
-          actual_days=${#csv_files[@]}
-          if [ "$actual_days" -ne "$expected_days" ]; then
-            echo "Incomplete Himawari month: expected $expected_days daily CSVs, found $actual_days."
-            echo "Do not archive an incomplete month; backfill missing daily CSVs in envdata-sat and rerun."
-            exit 1
-          fi
-
-          # Validate every filename belongs to the requested month and every
-          # daily CSV has its quality sidecar before copying any of them.
-          for csv in "${csv_files[@]}"; do
-            base=$(basename "$csv")
-            compact_date="${base#radiation_}"
-            compact_date="${compact_date%.csv}"
-            if [[ ! "$compact_date" =~ ^${year}${month}[0-9]{2}$ ]]; then
-              echo "Unexpected Himawari CSV for $sync_month: $base"
-              exit 1
-            fi
-            parsed_date=$(date -u -d "${compact_date:0:4}-${compact_date:4:2}-${compact_date:6:2}" +%Y%m%d)
-            if [ "$parsed_date" != "$compact_date" ]; then
-              echo "Invalid calendar date in Himawari filename: $base"
-              exit 1
-            fi
-            status="${csv%.csv}.status.json"
-            if [ ! -s "$status" ]; then
-              echo "Missing or empty quality sidecar for $base"
-              exit 1
-            fi
-          done
-
-          copied=0
-          for csv in "${csv_files[@]}"; do
-            base=$(basename "$csv")
-            compact_date="${base#radiation_}"
-            compact_date="${compact_date%.csv}"
-            if [[ ! "$compact_date" =~ ^[0-9]{8}$ ]]; then
-              echo "Unexpected daily CSV name: $base"
-              exit 1
-            fi
-            day="${compact_date:0:4}-${compact_date:4:2}-${compact_date:6:2}"
-            target="Archive/Himawari/$day"
-            mkdir -p "$target"
-            # Refresh an existing archived copy if the source was corrected.
-            rsync -a "$csv" "$target/"
-            status="${csv%.csv}.status.json"
-            rsync -a "$status" "$target/"
-            copied=$((copied+1))
-          done
-
-          echo "Processed $copied Himawari daily CSV files for $sync_month."
+          python scripts/archive_himawari_month.py \
+            --month "$sync_month" \
+            --source-dir "$tmp_dir/$source_dir" \
+            --archive-root "Archive/Himawari" \
+            --cities-json "$tmp_dir/config/cities.json"
 
       # 第三步：提交并推送
       - name: Commit external archive
