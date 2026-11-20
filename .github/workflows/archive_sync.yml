@@ -2,8 +2,8 @@ name: Sync Historical Archive By Month
 
 on:
   schedule:
-    # 09:00 Asia/Shanghai on day 1 (01:00 UTC).
-    - cron: "0 1 1 * *"
+    # 11:00 Asia/Shanghai on day 1 (03:00 UTC), after the daily CSV job.
+    - cron: "0 3 1 * *"
   workflow_dispatch:
     inputs:
       sync_month:
@@ -177,6 +177,14 @@ jobs:
           csv_files=("$tmp_dir/$source_dir"/radiation_*.csv)
           if [ ${#csv_files[@]} -eq 0 ]; then
             echo "No Himawari daily CSV files found for $sync_month."
+            exit 1
+          fi
+
+          expected_days=$(date -u -d "${sync_month}-01 +1 month -1 day" +%d)
+          actual_days=${#csv_files[@]}
+          if [ "$actual_days" -ne "$expected_days" ]; then
+            echo "Incomplete Himawari month: expected $expected_days daily CSVs, found $actual_days."
+            echo "Do not archive an incomplete month; backfill missing daily CSVs in envdata-sat and rerun."
             exit 1
           fi
 
