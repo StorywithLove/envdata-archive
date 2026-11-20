@@ -198,6 +198,11 @@ jobs:
               echo "Unexpected Himawari CSV for $sync_month: $base"
               exit 1
             fi
+            parsed_date=$(date -u -d "${compact_date:0:4}-${compact_date:4:2}-${compact_date:6:2}" +%Y%m%d)
+            if [ "$parsed_date" != "$compact_date" ]; then
+              echo "Invalid calendar date in Himawari filename: $base"
+              exit 1
+            fi
             status="${csv%.csv}.status.json"
             if [ ! -s "$status" ]; then
               echo "Missing or empty quality sidecar for $base"
