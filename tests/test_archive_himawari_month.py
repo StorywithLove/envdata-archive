@@ -5,7 +5,7 @@ import unittest
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from scripts.archive_himawari_month import copy_and_verify, validate_daily_file
+from scripts.archive_himawari_month import copy_and_verify, sha256_file, validate_daily_file
 
 
 class ValidateDailyFileTests(unittest.TestCase):
@@ -73,7 +73,7 @@ class ValidateDailyFileTests(unittest.TestCase):
         destination = self.root / "archive" / self.csv_path.name
         result = copy_and_verify(self.csv_path, destination)
         self.assertTrue(destination.exists())
-        self.assertEqual(result["sha256"], result["sha256"])
+        self.assertEqual(result["sha256"], sha256_file(self.csv_path))
         self.assertEqual(destination.read_bytes(), self.csv_path.read_bytes())
 
 
