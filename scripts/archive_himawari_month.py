@@ -63,6 +63,7 @@ def validate_daily_file(
     expected_times = expected_timestamps(day)
     quality_counts: Counter[str] = Counter()
     valid_records = 0
+    station_metrics: dict[str, dict[str, int]] = {}
     for station_id in sorted(expected_ids):
         rows = rows_by_station[station_id]
         times = [row["time_utc"] for row in rows]
@@ -71,6 +72,9 @@ def validate_daily_file(
                 f"{csv_path.name}: {station_id} must have exactly 144 unique "
                 "interval-end timestamps from 00:10 to next-day 00:00 UTC"
             )
+        station_valid = 0
+        station_missing_timestamp = 0
+        station_provider_null = 0
         for row in rows:
             if int(row["temporal_resolution_seconds"]) != 600:
                 raise ValueError(f"{csv_path.name}: {station_id} has non-600s cadence")
@@ -80,6 +84,10 @@ def validate_daily_file(
             if flag not in ALLOWED_QUALITY_FLAGS:
                 raise ValueError(f"{csv_path.name}: unknown quality flag {flag!r}")
             quality_counts[flag] += 1
+            if flag == "provider_timestamp_missing":
+                station_missing_timestamp += 1
+            elif flag == "provider_returned_null":
+                station_provider_null += 1
             if row["ghi_wm2"] != "":
                 value = float(row["ghi_wm2"])
                 if not math.isfinite(value) or value < 0:
@@ -87,8 +95,14 @@ def validate_daily_file(
                 if flag != "valid":
                     raise ValueError(f"{csv_path.name}: non-missing value has quality flag {flag!r}")
                 valid_records += 1
+                station_valid += 1
             elif flag == "valid":
                 raise ValueError(f"{csv_path.name}: blank value marked valid")
+        station_metrics[station_id] = {
+            "valid_records": station_valid,
+            "missing_timestamp_records": station_missing_timestamp,
+            "provider_null_records": station_provider_null,
+        }
 
     status = json.loads(status_path.read_text(encoding="utf-8"))
     total_rows = len(expected_ids) * 144
@@ -102,6 +116,8 @@ def validate_daily_file(
         raise ValueError(f"{status_path.name}: extraction reports failed locations")
     if status.get("valid_records") != valid_records:
         raise ValueError(f"{status_path.name}: valid_records does not match CSV")
+    if status.get("missing_records") != total_rows - valid_records:
+        raise ValueError(f"{status_path.name}: missing_records does not match CSV")
 
     summaries = {
         item.get("station_id"): item
@@ -109,9 +125,20 @@ def validate_daily_file(
     }
     if set(summaries) != expected_ids:
         raise ValueError(f"{status_path.name}: location_summaries do not match configured cities")
-    for station_id in expected_ids:
-        if summaries[station_id].get("records") != 144:
+    manifest_station_summaries = []
+    for station_id in sorted(expected_ids):
+        summary = summaries[station_id]
+        if summary.get("records") != 144:
             raise ValueError(f"{status_path.name}: {station_id} summary does not report 144 records")
+        for field, expected_value in station_metrics[station_id].items():
+            if summary.get(field) != expected_value:
+                raise ValueError(f"{status_path.name}: {station_id} {field} does not match CSV")
+        manifest_station_summaries.append({
+            "station_id": station_id,
+            **station_metrics[station_id],
+            "cadence_verified": summary.get("cadence_verified"),
+            "observed_time_steps_seconds": summary.get("observed_time_steps_seconds", []),
+        })
 
     return {
         "date_utc": day.isoformat(),
@@ -121,6 +148,7 @@ def validate_daily_file(
         "valid_records": valid_records,
         "missing_records": total_rows - valid_records,
         "quality_flags": dict(sorted(quality_counts.items())),
+        "station_summaries": manifest_station_summaries,
         "csv": {
             "filename": csv_path.name,
             "bytes": csv_path.stat().st_size,
