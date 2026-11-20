@@ -30,7 +30,7 @@ Archive/
 ## ⚙️ Sync Rule
 
 - **Automatic synchronization**:  
-- Runs at **09:00 AM on the 1st day of each month**
+- Runs at **11:00 AM Asia/Shanghai on the 1st day of each month** (after the previous UTC day's CSV generation)
 - Synchronizes all available data of the previous month from the source repositories, including envdata-sat daily Himawari CSVs
 - **Historical data handling**:  
 - If certain hourly files are missing, the task **skips missing files** but continues syncing other files
