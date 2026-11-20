@@ -4,7 +4,7 @@
 
 ---
 
-## 🔗 Real-Time Database
+## 🔗 Source repositories
 
 - Air-quality / PV sources: [StorywithLove/workflow](https://github.com/StorywithLove/workflow)  
 - Satellite radiation source: [StorywithLove/envdata-sat](https://github.com/StorywithLove/envdata-sat)  
@@ -16,15 +16,15 @@
 
 - Data is organized by **source** and **date**. Sources include CNEMC, ZJEMC, PVPower, and Himawari.
 
-- Each day has **one folder**, ideally containing **24 hourly CSV files**.
+- Each source is organized by date. Himawari daily CSVs are stored as:
 ```
-Archive/  
-  CNEMC/  
+Archive/
+  Himawari/
     YYYY-MM-DD/
-      YYYY-MM-DDT00.csv
-      YYYY-MM-DDT01.csv
-    ...
+      radiation_YYYYMMDD.csv
+      radiation_YYYYMMDD.status.json
 ```
+- CNEMC and ZJEMC retain their existing hourly-file layout; PVPower retains its existing monthly layout.
 ---
 
 ## ⚙️ Sync Rule
@@ -53,7 +53,7 @@ Archive/
 | Source repos              | [workflow](https://github.com/StorywithLove/workflow), [envdata-sat](https://github.com/StorywithLove/envdata-sat) |
 | Sync frequency            | Monthly (1st day of month, 09:00 AM)         |
 | Default sync data         | Previous month's historical data              |
-| Folder structure          | `Archive/<Source>/<YYYY-MM-DD>/<CSV files>` |
+| Folder structure          | `Archive/Himawari/<YYYY-MM-DD>/radiation_YYYYMMDD.csv` (other sources retain their existing layouts) |
 | Missing files handling    | Skipped, with warnings                        |
 
 ---
