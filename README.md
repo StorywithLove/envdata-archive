@@ -51,7 +51,7 @@ Archive/
 | Feature                  | Description                                   |
 |---------------------------|-----------------------------------------------|
 | Source repos              | [workflow](https://github.com/StorywithLove/workflow), [envdata-sat](https://github.com/StorywithLove/envdata-sat) |
-| Sync frequency            | Monthly (1st day of month, 09:00 AM)         |
+| Sync frequency            | Monthly (1st day of month, 11:00 AM Asia/Shanghai) |
 | Default sync data         | Previous month's historical data              |
 | Folder structure          | `Archive/Himawari/<YYYY-MM-DD>/radiation_YYYYMMDD.csv` (other sources retain their existing layouts) |
 | Missing files handling    | Skipped, with warnings                        |
