@@ -36,7 +36,7 @@ Archive/
 - If certain hourly files are missing, the task **skips missing files** but continues syncing other files
 - Only existing date folders are synced
 - Before archiving Himawari, each day is validated for all 31 configured stations and exactly 144 UTC interval-end timestamps per station (00:10 through next-day 00:00), native 600-second labels, model identity, quality flags, and consistency with its status JSON
-- After copying, SHA-256 hashes are compared with the source files; a monthly JSON manifest records per-day hashes, row counts, valid/missing counts, and quality-flag totals
+- After copying, SHA-256 hashes are compared with the source files; a monthly JSON manifest records per-day hashes, row counts, valid/missing counts, quality-flag totals, and per-station cadence verification (including unverified sparse days)
 - Monthly archive runs are serialized so scheduled and manually triggered syncs cannot write concurrently
 
 ---
