@@ -1,37 +1,37 @@
 # Historical Data Archive
 
-> This repository archives **historical data** from the real-time database.
+> This repository stores **long-term historical data** synchronized from real-time data repositories.
 
 ---
 
-## 🔗 Real-Time Database
+## 🔗 Source repositories
 
-- Repository: [StorywithLove/workflow](https://github.com/StorywithLove/workflow)  
-- Retention: Only keeps **the latest 1 year** of data  
-- Purpose: All historical data **beyond one year** will be archived in this repository
+- Air-quality / PV sources: [StorywithLove/workflow](https://github.com/StorywithLove/workflow)  
+- Satellite radiation source: [StorywithLove/envdata-sat](https://github.com/StorywithLove/envdata-sat)  
+- Purpose: retain historical monthly batches outside the real-time acquisition repositories
 
 ---
 
 ## 🗂️ Archive Structure
 
-- Data is organized by **source** and **date**. **source** contains CNEMC, ZJEMC, ... etc.
+- Data is organized by **source** and **date**. Sources include CNEMC, ZJEMC, PVPower, and Himawari.
 
-- Each day has **one folder**, ideally containing **24 hourly CSV files**.
+- Each source is organized by date. Himawari daily CSVs are stored as:
 ```
-Archive/  
-  CNEMC/  
+Archive/
+  Himawari/
     YYYY-MM-DD/
-      YYYY-MM-DDT00.csv
-      YYYY-MM-DDT01.csv
-    ...
+      radiation_YYYYMMDD.csv
+      radiation_YYYYMMDD.status.json
 ```
+- CNEMC and ZJEMC retain their existing hourly-file layout; PVPower retains its existing monthly layout.
 ---
 
 ## ⚙️ Sync Rule
 
 - **Automatic synchronization**:  
-- Runs at **09:00 AM on the 1st day of each month**
-- Synchronizes **all data of the previous month** from the real-time database to this archive
+- Runs at **11:00 AM Asia/Shanghai on the 1st day of each month** (after the previous UTC day's CSV generation)
+- Synchronizes all available data of the previous month from the source repositories, including envdata-sat daily Himawari CSVs
 - **Historical data handling**:  
 - If certain hourly files are missing, the task **skips missing files** but continues syncing other files
 - Only existing date folders are synced
@@ -50,10 +50,10 @@ Archive/
 
 | Feature                  | Description                                   |
 |---------------------------|-----------------------------------------------|
-| Source repo               | [StorywithLove/workflow](https://github.com/StorywithLove/workflow) |
-| Sync frequency            | Monthly (1st day of month, 09:00 AM)         |
+| Source repos              | [workflow](https://github.com/StorywithLove/workflow), [envdata-sat](https://github.com/StorywithLove/envdata-sat) |
+| Sync frequency            | Monthly (1st day of month, 11:00 AM Asia/Shanghai) |
 | Default sync data         | Previous month's historical data              |
-| Folder structure          | `Archive/<Source>/<YYYY-MM-DD>/<Hourly CSV>` |
+| Folder structure          | `Archive/Himawari/<YYYY-MM-DD>/radiation_YYYYMMDD.csv` (other sources retain their existing layouts) |
 | Missing files handling    | Skipped, with warnings                        |
 
 ---
