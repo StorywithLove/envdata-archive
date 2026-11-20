@@ -64,6 +64,12 @@ jobs:
             fi
           done
 
+          oldest_eligible_month=$(date -u -d "$(date -u +%Y-%m-01) -13 months" +%Y-%m)
+          if [[ "$himawari_month" > "$oldest_eligible_month" ]]; then
+            echo "Refusing to archive/delete $himawari_month; the oldest eligible month is $oldest_eligible_month."
+            exit 1
+          fi
+
           start_date="${sync_month}-01"
           end_date=$(date -u -d "$start_date +1 month" +%Y-%m-%d)
 
