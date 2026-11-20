@@ -215,7 +215,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add Archive/CNEMC Archive/ZJEMC Archive/PVPower Archive/Himawari
+          for path in Archive/CNEMC Archive/ZJEMC Archive/PVPower Archive/Himawari; do
+            if [ -d "$path" ]; then
+              git add "$path"
+            fi
+          done
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
