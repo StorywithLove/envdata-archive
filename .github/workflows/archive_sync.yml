@@ -21,6 +21,7 @@ permissions:
 concurrency:
   group: monthly-historical-archive
   cancel-in-progress: false
+  queue: max
 
 jobs:
   sync-archive:
