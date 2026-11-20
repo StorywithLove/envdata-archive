@@ -31,13 +31,14 @@ Archive/
 
 - **Automatic synchronization**:  
 - Runs at **11:00 AM Asia/Shanghai on the 1st day of each month** (after the previous UTC day's CSV generation)
-- Synchronizes the previous month's data from the source repositories, including envdata-sat daily Himawari CSVs. Himawari archiving is all-or-nothing for the month: every calendar day must be present with its CSV and quality sidecar.
+- Synchronizes the previous month's data from the source repositories, including expired envdata-sat Himawari daily CSVs. Other sources continue syncing the previous month; Himawari defaults to the month 13 months before the current month (one-year retention), with an optional manual override. Himawari archiving is all-or-nothing for the selected month: every calendar day must be present with its CSV and quality sidecar.
 - **Historical data handling**:  
 - If certain hourly files are missing, the task **skips missing files** but continues syncing other files
 - Only existing date folders are synced
 - Before archiving Himawari, each day is validated for all 31 configured stations and exactly 144 UTC interval-end timestamps per station (00:10 through next-day 00:00), native 600-second labels, model identity, quality flags, and consistency with its status JSON
 - After copying, SHA-256 hashes are compared with the source files; a monthly JSON manifest records per-day hashes, row counts, valid/missing counts, quality-flag totals, and per-station cadence verification (including unverified sparse days)
 - Monthly archive runs are serialized so scheduled and manually triggered syncs cannot write concurrently
+- After a successful archive commit, the workflow can request source cleanup through the envdata-sat `repository_dispatch` callback. It requires an `ENV_DATA_SAT_TOKEN` Actions secret in this repository with Contents: write permission on `StorywithLove/envdata-sat`; the source callback independently re-downloads the committed manifest and verifies every source CSV/status SHA-256 before deleting anything
 
 ---
 
