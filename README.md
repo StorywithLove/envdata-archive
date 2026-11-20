@@ -24,17 +24,20 @@ Archive/
       radiation_YYYYMMDD.csv
       radiation_YYYYMMDD.status.json
 ```
-- CNEMC and ZJEMC retain their existing hourly-file layout; PVPower retains its existing monthly layout.
+- CNEMC and ZJEMC retain their existing hourly-file layout; PVPower retains its existing monthly layout. Himawari monthly manifests are stored at `Archive/Himawari/_manifests/YYYY-MM.json`.
 ---
 
 ## ⚙️ Sync Rule
 
 - **Automatic synchronization**:  
 - Runs at **11:00 AM Asia/Shanghai on the 1st day of each month** (after the previous UTC day's CSV generation)
-- Synchronizes all available data of the previous month from the source repositories, including envdata-sat daily Himawari CSVs
+- Synchronizes the previous month's data from the source repositories, including envdata-sat daily Himawari CSVs. Himawari archiving is all-or-nothing for the month: every calendar day must be present with its CSV and quality sidecar.
 - **Historical data handling**:  
 - If certain hourly files are missing, the task **skips missing files** but continues syncing other files
 - Only existing date folders are synced
+- Before archiving Himawari, each day is validated for all 31 configured stations and exactly 144 UTC interval-end timestamps per station (00:10 through next-day 00:00), native 600-second labels, model identity, quality flags, and consistency with its status JSON
+- After copying, SHA-256 hashes are compared with the source files; a monthly JSON manifest records per-day hashes, row counts, valid/missing counts, and quality-flag totals
+- Monthly archive runs are serialized so scheduled and manually triggered syncs cannot write concurrently
 
 ---
 
@@ -54,7 +57,8 @@ Archive/
 | Sync frequency            | Monthly (1st day of month, 11:00 AM Asia/Shanghai) |
 | Default sync data         | Previous month's historical data              |
 | Folder structure          | `Archive/Himawari/<YYYY-MM-DD>/radiation_YYYYMMDD.csv` (other sources retain their existing layouts) |
-| Missing files handling    | Skipped, with warnings                        |
+| Missing files handling    | Skipped for existing CNEMC/ZJEMC/PVPower flows; incomplete Himawari months fail before commit |
+| Himawari validation       | 31 stations × 144 intervals/day; sidecar checks; SHA-256 manifest |
 
 ---
 
