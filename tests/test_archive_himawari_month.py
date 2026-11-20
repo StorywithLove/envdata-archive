@@ -23,10 +23,10 @@ class ValidateDailyFileTests(unittest.TestCase):
             self.rows.append({
                 "station_id": "wuhan",
                 "time_utc": timestamp,
-                "ghi_wm2": "0" if index == 1 else ("" if index == 2 else "123.4"),
+                "ghi_wm2": "0" if index == 1 else ("" if index in (2, 3) else "123.4"),
                 "temporal_resolution_seconds": "600",
                 "model_requested": "jma_jaxa_himawari",
-                "quality_flag": "valid" if index != 2 else "provider_returned_null",
+                "quality_flag": "valid" if index not in (2, 3) else ("provider_returned_null" if index == 2 else "provider_timestamp_missing"),
             })
         self._write_csv()
         self._write_status()
@@ -47,15 +47,27 @@ class ValidateDailyFileTests(unittest.TestCase):
             "locations_succeeded": 1,
             "locations_failed": [],
             "failures": [],
-            "valid_records": 143,
-            "location_summaries": [{"station_id": "wuhan", "records": 144}],
+            "valid_records": 142,
+            "missing_records": 2,
+            "location_summaries": [{
+                "station_id": "wuhan",
+                "records": 144,
+                "valid_records": 142,
+                "missing_timestamp_records": 1,
+                "provider_null_records": 1,
+                "cadence_verified": False,
+                "observed_time_steps_seconds": [1800],
+            }],
         }), encoding="utf-8")
 
     def test_valid_day_preserves_zero_and_missing_value(self):
         result = validate_daily_file(self.csv_path, self.status_path, self.day, self.city)
         self.assertEqual(result["records"], 144)
-        self.assertEqual(result["valid_records"], 143)
+        self.assertEqual(result["valid_records"], 142)
         self.assertEqual(result["quality_flags"]["provider_returned_null"], 1)
+        self.assertEqual(result["quality_flags"]["provider_timestamp_missing"], 1)
+        self.assertFalse(result["station_summaries"][0]["cadence_verified"])
+        self.assertEqual(result["station_summaries"][0]["observed_time_steps_seconds"], [1800])
 
     def test_missing_timestamp_is_rejected(self):
         self.rows.pop(10)
