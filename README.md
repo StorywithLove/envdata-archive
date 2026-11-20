@@ -1,20 +1,20 @@
 # Historical Data Archive
 
-> This repository archives **historical data** from the real-time database.
+> This repository stores **long-term historical data** synchronized from real-time data repositories.
 
 ---
 
 ## 🔗 Real-Time Database
 
-- Repository: [StorywithLove/workflow](https://github.com/StorywithLove/workflow)  
-- Retention: Only keeps **the latest 1 year** of data  
-- Purpose: All historical data **beyond one year** will be archived in this repository
+- Air-quality / PV sources: [StorywithLove/workflow](https://github.com/StorywithLove/workflow)  
+- Satellite radiation source: [StorywithLove/envdata-sat](https://github.com/StorywithLove/envdata-sat)  
+- Purpose: retain historical monthly batches outside the real-time acquisition repositories
 
 ---
 
 ## 🗂️ Archive Structure
 
-- Data is organized by **source** and **date**. **source** contains CNEMC, ZJEMC, ... etc.
+- Data is organized by **source** and **date**. Sources include CNEMC, ZJEMC, PVPower, and Himawari.
 
 - Each day has **one folder**, ideally containing **24 hourly CSV files**.
 ```
@@ -31,7 +31,7 @@ Archive/
 
 - **Automatic synchronization**:  
 - Runs at **09:00 AM on the 1st day of each month**
-- Synchronizes **all data of the previous month** from the real-time database to this archive
+- Synchronizes all available data of the previous month from the source repositories, including envdata-sat daily Himawari CSVs
 - **Historical data handling**:  
 - If certain hourly files are missing, the task **skips missing files** but continues syncing other files
 - Only existing date folders are synced
@@ -50,10 +50,10 @@ Archive/
 
 | Feature                  | Description                                   |
 |---------------------------|-----------------------------------------------|
-| Source repo               | [StorywithLove/workflow](https://github.com/StorywithLove/workflow) |
+| Source repos              | [workflow](https://github.com/StorywithLove/workflow), [envdata-sat](https://github.com/StorywithLove/envdata-sat) |
 | Sync frequency            | Monthly (1st day of month, 09:00 AM)         |
 | Default sync data         | Previous month's historical data              |
-| Folder structure          | `Archive/<Source>/<YYYY-MM-DD>/<Hourly CSV>` |
+| Folder structure          | `Archive/<Source>/<YYYY-MM-DD>/<CSV files>` |
 | Missing files handling    | Skipped, with warnings                        |
 
 ---
