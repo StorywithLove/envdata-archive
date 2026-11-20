@@ -247,4 +247,3 @@ jobs:
             https://api.github.com/repos/StorywithLove/envdata-sat/dispatches \
             -d "$payload"
           echo "Requested source cleanup for verified Himawari month $HIMAWARI_MONTH."
-          fi
