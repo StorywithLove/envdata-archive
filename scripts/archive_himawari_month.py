@@ -7,6 +7,7 @@ import calendar
 import csv
 import hashlib
 import json
+import math
 import re
 import shutil
 from collections import Counter, defaultdict
@@ -81,13 +82,13 @@ def validate_daily_file(
             quality_counts[flag] += 1
             if row["ghi_wm2"] != "":
                 value = float(row["ghi_wm2"])
-                if value < 0:
-                    raise ValueError(f"{csv_path.name}: negative radiation value")
+                if not math.isfinite(value) or value < 0:
+                    raise ValueError(f"{csv_path.name}: invalid radiation value")
+                if flag != "valid":
+                    raise ValueError(f"{csv_path.name}: non-missing value has quality flag {flag!r}")
                 valid_records += 1
             elif flag == "valid":
                 raise ValueError(f"{csv_path.name}: blank value marked valid")
-            elif flag != "valid" and row["ghi_wm2"] != "":
-                raise ValueError(f"{csv_path.name}: missing quality flag has a value")
 
     status = json.loads(status_path.read_text(encoding="utf-8"))
     total_rows = len(expected_ids) * 144
